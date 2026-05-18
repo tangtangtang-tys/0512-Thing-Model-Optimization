@@ -21,11 +21,14 @@
 
       <el-form label-width="96px" class="repair-form">
         <el-form-item label="修复方式">
-          <el-radio-group v-model="mode">
-            <el-radio-button label="update">手动修改</el-radio-button>
-            <el-radio-button label="reset">恢复类目默认</el-radio-button>
-            <el-radio-button label="clear">清空覆盖</el-radio-button>
-          </el-radio-group>
+          <div class="repair-mode-row">
+            <el-radio-group v-model="mode">
+              <el-radio-button label="update">手动修改</el-radio-button>
+              <el-radio-button label="reset">恢复类目默认</el-radio-button>
+              <el-radio-button label="clear">清空覆盖</el-radio-button>
+            </el-radio-group>
+            <RequirementMarker id="hardware-overrides" placement="top" />
+          </div>
         </el-form-item>
         <el-form-item v-if="mode === 'update'" label="覆盖值">
           <el-input v-model="valueText" placeholder="请输入硬件默认值" clearable />
@@ -36,6 +39,7 @@
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="handleCancel">取消</el-button>
+        <RequirementMarker id="hardware-overrides" placement="top-end" />
         <el-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</el-button>
       </div>
     </template>
@@ -45,6 +49,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
+import RequirementMarker from '@/components/RequirementMarker.vue';
 import type { HardwareOverride } from '@/types/iot';
 import { formatDefaultValue, repairHardwareOverride } from '@/api/iot/thingModel';
 
@@ -110,5 +115,11 @@ async function handleSubmit() {
 
 .repair-form {
   padding-top: 6px;
+}
+
+.repair-mode-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 </style>

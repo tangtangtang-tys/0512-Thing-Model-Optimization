@@ -27,7 +27,10 @@
       <el-form ref="formRef" :model="form" :rules="rules" label-width="118px" class="model-form">
         <section v-show="activeStep === 0" class="step-panel">
           <header class="step-head">
-            <h3>定义设备能力</h3>
+            <div class="step-title">
+              <h3>定义设备能力</h3>
+              <RequirementMarker id="model-basic" placement="right" />
+            </div>
             <p>先明确该能力属于属性、服务还是事件，后续会影响访问权限、默认值策略和发布校验。</p>
           </header>
 
@@ -95,7 +98,10 @@
 
         <section v-show="activeStep === 1" class="step-panel">
           <header class="step-head">
-            <h3>配置 TSL 数据定义</h3>
+            <div class="step-title">
+              <h3>配置 TSL 数据定义</h3>
+              <RequirementMarker id="model-schema" placement="right" />
+            </div>
             <p>用标准数据类型约束设备上报、云端下发和 App 展示，避免后续硬件型号重复定义。</p>
           </header>
 
@@ -144,7 +150,10 @@
               <div class="enum-config">
                 <div class="config-head">
                   <span>枚举值需保持稳定，发布后应避免修改已有枚举含义。</span>
-                  <el-button text type="primary" :icon="Plus" @click="addEnumItem">添加参数</el-button>
+                  <div class="inline-action-group">
+                    <RequirementMarker id="model-schema" placement="left" />
+                    <el-button text type="primary" :icon="Plus" @click="addEnumItem">添加参数</el-button>
+                  </div>
                 </div>
                 <div v-for="(item, index) in enumItems" :key="index" class="enum-row">
                   <span>枚举值</span>
@@ -217,7 +226,10 @@
             <div v-if="form.dataType === 'struct' || form.dataSpec.elementType === 'struct'" class="struct-table">
               <div class="config-head">
                 <span>结构体字段</span>
-                <el-button text type="primary" :icon="Plus" @click="addStructField">新增字段</el-button>
+                <div class="inline-action-group">
+                  <RequirementMarker id="model-schema" placement="left" />
+                  <el-button text type="primary" :icon="Plus" @click="addStructField">新增字段</el-button>
+                </div>
               </div>
               <div v-for="(field, index) in structFields" :key="index" class="struct-row">
                 <el-input v-model="field.name" placeholder="字段名" clearable />
@@ -238,7 +250,10 @@
 
         <section v-show="activeStep === 2" class="step-panel">
           <header class="step-head">
-            <h3>{{ defaultStepTitle }}</h3>
+            <div class="step-title">
+              <h3>{{ defaultStepTitle }}</h3>
+              <RequirementMarker id="model-defaults" placement="right" />
+            </div>
             <p>{{ defaultStepDesc }}</p>
           </header>
 
@@ -328,6 +343,7 @@
 
           <div class="inheritance-preview">
             <strong>默认值继承链</strong>
+            <RequirementMarker id="model-defaults" placement="top" tone="blue" />
             <span>产品类目默认值</span>
             <i />
             <span>硬件型号覆盖</span>
@@ -338,7 +354,10 @@
 
         <section v-show="activeStep === 3" class="step-panel">
           <header class="step-head">
-            <h3>治理规则与发布影响</h3>
+            <div class="step-title">
+              <h3>治理规则与发布影响</h3>
+              <RequirementMarker id="model-governance" placement="right" />
+            </div>
             <p>配置发布后的兼容策略、展示策略和排序，确保后续版本迭代不需要重建功能项。</p>
           </header>
 
@@ -379,7 +398,10 @@
           </el-row>
 
           <div class="review-card">
-            <h4>保存后系统会执行</h4>
+            <div class="review-card__head">
+              <h4>保存后系统会执行</h4>
+              <RequirementMarker id="model-governance" placement="top" />
+            </div>
             <p>1. 校验标识符唯一性、默认值类型、数值范围和只读下发策略。</p>
             <p>2. 写入草稿变更，发布前进入发布校验和审计日志。</p>
             <p>3. 发布后类目模板、硬件覆盖、设备初始化效果同步刷新。</p>
@@ -395,6 +417,7 @@
           <el-button @click="handleCancel">取消</el-button>
           <el-button v-if="activeStep > 0" @click="activeStep -= 1">上一步</el-button>
           <el-button v-if="activeStep < steps.length - 1" type="primary" plain @click="handleNextStep">下一步</el-button>
+          <RequirementMarker id="model-governance" placement="top-end" />
           <el-button :type="activeStep === steps.length - 1 ? 'primary' : 'default'" :loading="submitLoading" @click="handleSubmit">保存草稿</el-button>
         </div>
       </div>
@@ -407,6 +430,7 @@ import { computed, reactive, ref, toRaw, watch } from 'vue';
 import { Delete, Plus } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage } from 'element-plus';
+import RequirementMarker from '@/components/RequirementMarker.vue';
 import type { DataType, ThingModelDefinition } from '@/types/iot';
 import { saveThingModel, validateDefaultValue } from '@/api/iot/thingModel';
 
@@ -872,6 +896,23 @@ function normalizeBeforeSubmit() {
     font-size: 13px;
     line-height: 1.6;
   }
+}
+
+.step-title,
+.review-card__head,
+.inline-action-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.step-title h3,
+.review-card__head h4 {
+  margin-bottom: 0;
+}
+
+.step-title {
+  margin-bottom: 8px;
 }
 
 :deep(.thing-model-drawer) {

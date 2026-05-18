@@ -38,6 +38,7 @@
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="handleCancel">取消</el-button>
+        <RequirementMarker id="function-manage" placement="top-end" />
         <el-button type="primary" :loading="submitLoading" @click="handleSubmit">完成</el-button>
       </div>
     </template>
@@ -49,6 +50,7 @@ import { reactive, ref, watch } from 'vue';
 import { Plus } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage } from 'element-plus';
+import RequirementMarker from '@/components/RequirementMarker.vue';
 
 const props = defineProps<{
   modelValue: boolean;

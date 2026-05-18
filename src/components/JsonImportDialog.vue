@@ -21,6 +21,7 @@
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="handleCancel">取消</el-button>
+        <RequirementMarker id="json-import-export" placement="top-end" />
         <el-button type="primary" :loading="submitLoading" @click="handleConfirm">完成</el-button>
       </div>
     </template>
@@ -30,6 +31,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
+import RequirementMarker from '@/components/RequirementMarker.vue';
 import type { ImportPreviewItem } from '@/types/iot';
 import { confirmImportModels, parseImportModels } from '@/api/iot/thingModel';
 

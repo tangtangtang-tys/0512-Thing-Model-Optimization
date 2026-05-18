@@ -9,32 +9,35 @@
   >
     <el-skeleton v-if="checkLoading" :rows="8" animated />
     <template v-else-if="checkResult">
-      <el-row :gutter="12" class="summary-row">
-        <el-col :span="6">
-          <div class="metric">
-            <strong>{{ checkResult.summary.created }}</strong>
-            <span>新增</span>
-          </div>
-        </el-col>
-        <el-col :span="6">
-          <div class="metric">
-            <strong>{{ checkResult.summary.modified }}</strong>
-            <span>修改</span>
-          </div>
-        </el-col>
-        <el-col :span="6">
-          <div class="metric">
-            <strong>{{ checkResult.summary.deprecated }}</strong>
-            <span>废弃</span>
-          </div>
-        </el-col>
-        <el-col :span="6">
-          <div class="metric">
-            <strong>{{ checkResult.summary.defaultChanged }}</strong>
-            <span>默认值变更</span>
-          </div>
-        </el-col>
-      </el-row>
+      <div class="summary-wrap">
+        <el-row :gutter="12" class="summary-row">
+          <el-col :span="6">
+            <div class="metric">
+              <strong>{{ checkResult.summary.created }}</strong>
+              <span>新增</span>
+            </div>
+          </el-col>
+          <el-col :span="6">
+            <div class="metric">
+              <strong>{{ checkResult.summary.modified }}</strong>
+              <span>修改</span>
+            </div>
+          </el-col>
+          <el-col :span="6">
+            <div class="metric">
+              <strong>{{ checkResult.summary.deprecated }}</strong>
+              <span>废弃</span>
+            </div>
+          </el-col>
+          <el-col :span="6">
+            <div class="metric">
+              <strong>{{ checkResult.summary.defaultChanged }}</strong>
+              <span>默认值变更</span>
+            </div>
+          </el-col>
+        </el-row>
+        <RequirementMarker id="publish-check" placement="left" />
+      </div>
 
       <el-alert
         v-if="checkResult.passed"
@@ -79,15 +82,20 @@
             placeholder="请输入发布说明"
             clearable
           />
+          <RequirementMarker id="publish-note-sync" inline placement="top" />
         </el-form-item>
         <el-form-item label="同步策略">
           <el-checkbox v-model="syncHardware">同步到允许继承的硬件型号</el-checkbox>
           <el-checkbox v-model="triggerInitTask">发布后触发默认值初始化任务</el-checkbox>
+          <RequirementMarker id="publish-note-sync" inline placement="top" />
         </el-form-item>
       </el-form>
 
       <div v-if="checkResult.errors.length" class="check-list check-list--error">
-        <h4>阻断项</h4>
+        <div class="check-list__head">
+          <h4>阻断项</h4>
+          <RequirementMarker id="publish-check" placement="top" />
+        </div>
         <p v-for="item in checkResult.errors" :key="item">{{ item }}</p>
         <div class="quick-actions">
           <el-button size="small" type="danger" plain @click="emit('navigate', 'hardware')">去修复硬件覆盖</el-button>
@@ -96,7 +104,10 @@
         </div>
       </div>
       <div v-if="checkResult.warnings.length" class="check-list check-list--warning">
-        <h4>高风险提示</h4>
+        <div class="check-list__head">
+          <h4>高风险提示</h4>
+          <RequirementMarker id="publish-check" placement="top" />
+        </div>
         <p v-for="item in checkResult.warnings" :key="item">{{ item }}</p>
       </div>
     </template>
@@ -104,6 +115,7 @@
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="handleCancel">取消</el-button>
+        <RequirementMarker id="publish-check" placement="top-end" />
         <el-button type="primary" :loading="submitLoading" :disabled="!checkResult?.passed" @click="handlePublish">确定发布</el-button>
       </div>
     </template>
@@ -113,6 +125,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
+import RequirementMarker from '@/components/RequirementMarker.vue';
 import type { PublishCheckResult } from '@/types/iot';
 import { checkPublish, publishTemplate } from '@/api/iot/thingModel';
 
@@ -182,8 +195,16 @@ async function handlePublish() {
 </script>
 
 <style scoped lang="scss">
-.summary-row {
+.summary-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
   margin-bottom: 14px;
+}
+
+.summary-row {
+  min-width: 0;
 }
 
 .metric,
@@ -244,6 +265,17 @@ async function handlePublish() {
     margin: 6px 0;
     color: #364152;
     line-height: 1.5;
+  }
+}
+
+.check-list__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+
+  h4 {
+    margin: 0;
   }
 }
 

@@ -26,6 +26,7 @@
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="handleCancel">取消</el-button>
+        <RequirementMarker id="category-manage" placement="top-end" />
         <el-button type="primary" :loading="submitLoading" @click="handleSubmit">完成</el-button>
       </div>
     </template>
@@ -36,6 +37,7 @@
 import { reactive, ref, watch } from 'vue';
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage } from 'element-plus';
+import RequirementMarker from '@/components/RequirementMarker.vue';
 import type { ProductCategory } from '@/types/iot';
 import { saveProductCategory } from '@/api/iot/thingModel';
 

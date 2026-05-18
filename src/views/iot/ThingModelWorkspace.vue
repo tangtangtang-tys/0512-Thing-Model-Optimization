@@ -37,6 +37,7 @@
         <div v-if="!detailMode" class="topbar__actions">
           <el-input v-model="queryParams.keyword" class="top-search" placeholder="请输入功能名称/功能项名称" clearable @keyup.enter="handleQuery" />
           <el-button class="docs-top-button" type="warning" plain :icon="Document" @click="docsOpen = true">查看需求说明</el-button>
+          <RequirementMarker id="workflow-guide" placement="bottom" />
           <el-button type="primary" @click="handleQuery">查询</el-button>
         </div>
         <div v-else class="topbar__actions">
@@ -46,6 +47,7 @@
               <el-button type="primary" :icon="UploadFilled" :disabled="!canPublish" @click="handleOpenPublish">立即发布</el-button>
             </span>
           </el-tooltip>
+          <RequirementMarker id="publish-check" placement="bottom-end" />
         </div>
       </el-header>
 
@@ -64,7 +66,10 @@
         <aside class="category-panel">
           <div class="category-title">
             <strong>产品类</strong>
-            <el-button text type="primary" :icon="CirclePlus" @click="handleAddCategory" />
+            <div class="inline-action-group">
+              <RequirementMarker id="category-manage" placement="right" />
+              <el-button text type="primary" :icon="CirclePlus" @click="handleAddCategory" />
+            </div>
           </div>
           <el-input v-model="categoryKeyword" placeholder="请输入产品类名称" clearable :prefix-icon="Search" @keyup.enter="loadCategories" />
           <div class="category-list">
@@ -92,7 +97,10 @@
                 <p><span>创建时间：</span>{{ selectedCategory.updatedAt }}</p>
                 <p><span>备注：</span>{{ selectedCategory.description }}</p>
               </div>
-              <el-button :icon="EditPen" @click="handleEditCategory">编辑</el-button>
+              <div class="inline-action-group">
+                <RequirementMarker id="category-manage" placement="left" />
+                <el-button :icon="EditPen" @click="handleEditCategory">编辑</el-button>
+              </div>
             </div>
 
             <div class="process-strip">
@@ -102,16 +110,23 @@
               </div>
               <div class="process-actions">
                 <el-button plain @click="handleSwitchModule('hardware')">硬件覆盖</el-button>
+                <RequirementMarker id="hardware-overrides" placement="top" />
                 <el-button plain @click="handleSwitchModule('devices')">设备初始化</el-button>
+                <RequirementMarker id="device-init" placement="top" />
                 <el-button plain @click="handleSwitchModule('audit')">审计日志</el-button>
+                <RequirementMarker id="audit-log" placement="top" />
                 <el-button type="primary" plain @click="handleWorkflowAction(nextActionKey)">{{ nextActionButton }}</el-button>
+                <RequirementMarker id="workflow-guide" placement="top-end" />
               </div>
             </div>
 
             <template v-if="activeModule === 'thing-model'">
               <div class="feature-head">
                 <strong>功能项列表（{{ functionCards.length }}）</strong>
-                <el-button type="primary" :icon="Plus" @click="handleAddFunction">新增功能</el-button>
+                <div class="inline-action-group">
+                  <RequirementMarker id="function-manage" placement="left" />
+                  <el-button type="primary" :icon="Plus" @click="handleAddFunction">新增功能</el-button>
+                </div>
               </div>
               <div class="feature-grid">
                 <button v-for="card in functionCards" :key="card.id" class="feature-card" type="button" @click="openFeatureDetail(card)">
@@ -137,7 +152,10 @@
             <template v-else-if="activeModule === 'hardware'">
               <div class="table-panel">
                 <PanelHead title="硬件默认值覆盖" desc="冲突项会阻断模板发布，需要修复、清空或恢复类目默认值。">
-                  <el-button type="primary" plain :disabled="conflictOverrides.length === 0" @click="openRepairOverride(conflictOverrides[0])">修复首个冲突</el-button>
+                  <div class="inline-action-group">
+                    <RequirementMarker id="hardware-overrides" placement="left" />
+                    <el-button type="primary" plain :disabled="conflictOverrides.length === 0" @click="openRepairOverride(conflictOverrides[0])">修复首个冲突</el-button>
+                  </div>
                 </PanelHead>
                 <HardwareOverrideTable :rows="hardwareOverrides" />
               </div>
@@ -146,7 +164,10 @@
             <template v-else-if="activeModule === 'devices'">
               <div class="table-panel">
                 <PanelHead title="设备初始化效果" desc="模拟设备从类目模板、硬件覆盖中计算最终默认值并写入设备快照。">
-                  <el-button type="primary" :icon="Upload" @click="handleInitializeDevices()">批量初始化</el-button>
+                  <div class="inline-action-group">
+                    <RequirementMarker id="device-init" placement="left" />
+                    <el-button type="primary" :icon="Upload" @click="handleInitializeDevices()">批量初始化</el-button>
+                  </div>
                 </PanelHead>
                 <DeviceTable />
               </div>
@@ -180,6 +201,7 @@
           <div class="detail-hero__actions">
             <el-button data-iot-action="edit-function" native-type="button" :icon="EditPen" @click="handleEditFunction">编辑</el-button>
             <el-button data-iot-action="delete-function" native-type="button" :icon="Delete" @click="handleDeleteFunction">删除</el-button>
+            <RequirementMarker id="function-manage" placement="left" />
           </div>
         </div>
 
@@ -190,10 +212,13 @@
             </el-alert>
             <div class="detail-toolbar">
               <strong>物模型信息</strong>
-              <div>
+              <div class="inline-action-group">
                 <el-button data-iot-action="export-json" native-type="button" :icon="Download" @click="handleExport">JSON导出</el-button>
+                <RequirementMarker id="json-import-export" placement="top" />
                 <el-button data-iot-action="import-json" native-type="button" :icon="UploadFilled" @click="handleOpenImport">文本导入</el-button>
+                <RequirementMarker id="json-import-export" placement="top" />
                 <el-button data-iot-action="add-model" native-type="button" type="primary" :icon="Plus" @click="handleAddModel">添加物模型</el-button>
+                <RequirementMarker id="model-template" placement="top-end" />
               </div>
             </div>
             <ModelTable />
@@ -291,6 +316,7 @@ import FunctionDialog from '@/components/FunctionDialog.vue';
 import HardwareOverrideDialog from '@/components/HardwareOverrideDialog.vue';
 import JsonImportDialog from '@/components/JsonImportDialog.vue';
 import PublishDialog from '@/components/PublishDialog.vue';
+import RequirementMarker from '@/components/RequirementMarker.vue';
 import RequirementDocsDialog from '@/components/RequirementDocsDialog.vue';
 import ThingModelDrawer from '@/components/ThingModelDrawer.vue';
 import type {
@@ -515,7 +541,7 @@ const ModelTable = defineComponent({
               }),
               h(ElTableColumn, {
                 label: '操作',
-                width: 210,
+                width: 250,
                 fixed: 'right'
               }, {
                 default: ({ row }: { row: ThingModelDefinition }) =>
@@ -537,7 +563,8 @@ const ModelTable = defineComponent({
                     h(ElButton, { link: true, type: 'danger', nativeType: 'button', onClick: (event: MouseEvent) => {
                       event.stopPropagation();
                       handleDeprecateModel(row.id);
-                    } }, () => '删除')
+                    } }, () => '删除'),
+                    h(RequirementMarker, { id: 'model-copy-delete', placement: 'left' })
                   ])
               })
             ])
@@ -570,11 +597,12 @@ const HardwareOverrideTable = defineComponent({
             h(ElTableColumn, { label: '硬件覆盖', minWidth: 120 }, { default: ({ row }: { row: HardwareOverride }) => formatDefaultValue(row.hardwareDefault) }),
             h(ElTableColumn, { label: '状态', width: 90 }, { default: ({ row }: { row: HardwareOverride }) => h(ElTag, { type: row.valid ? 'success' : 'danger' }, () => (row.valid ? '合法' : '冲突')) }),
             h(ElTableColumn, { label: '说明', prop: 'reason', minWidth: 220, showOverflowTooltip: true }),
-            h(ElTableColumn, { label: '操作', width: 170, fixed: 'right' }, {
+            h(ElTableColumn, { label: '操作', width: 210, fixed: 'right' }, {
               default: ({ row }: { row: HardwareOverride }) =>
                 h(ElSpace, null, () => [
                   h(ElButton, { link: true, type: row.valid ? 'primary' : 'danger', icon: Edit, onClick: () => openRepairOverride(row) }, () => (row.valid ? '编辑' : '修复')),
-                  h(ElButton, { link: true, type: 'primary', onClick: () => handleViewModelByIdentifier(row.modelIdentifier) }, () => '查看模型')
+                  h(ElButton, { link: true, type: 'primary', onClick: () => handleViewModelByIdentifier(row.modelIdentifier) }, () => '查看模型'),
+                  h(RequirementMarker, { id: 'hardware-overrides', placement: 'left' })
                 ])
             })
           ])
@@ -593,7 +621,10 @@ const DeviceTable = defineComponent({
         h(ElTableColumn, { label: '模板版本', prop: 'templateVersion', width: 110 }),
         h(ElTableColumn, { label: '初始化', width: 100 }, { default: ({ row }: { row: DeviceInstance }) => h(ElTag, { type: row.initialized ? 'success' : 'warning' }, () => (row.initialized ? '已初始化' : '待初始化')) }),
         h(ElTableColumn, { label: '默认值快照', minWidth: 260, showOverflowTooltip: true }, { default: ({ row }: { row: DeviceInstance }) => formatDefaultValue(row.defaultSnapshot) }),
-        h(ElTableColumn, { label: '操作', width: 150, fixed: 'right' }, { default: ({ row }: { row: DeviceInstance }) => h(ElButton, { link: true, type: 'primary', icon: Upload, onClick: () => handleInitializeDevices(row.id) }, () => '模拟初始化') })
+        h(ElTableColumn, { label: '操作', width: 180, fixed: 'right' }, { default: ({ row }: { row: DeviceInstance }) => h(ElSpace, null, () => [
+          h(ElButton, { link: true, type: 'primary', icon: Upload, onClick: () => handleInitializeDevices(row.id) }, () => '模拟初始化'),
+          h(RequirementMarker, { id: 'device-init', placement: 'left' })
+        ]) })
       ]);
   }
 });
@@ -631,7 +662,8 @@ const VersionTimeline = defineComponent({
                     h('div', [h('strong', item.version), h('span', item.releaseNote)]),
                     h(ElSpace, null, () => [
                       h(ElButton, { size: 'small', plain: true, onClick: () => handleViewVersion(item) }, () => '查看详情'),
-                      h(ElButton, { size: 'small', type: 'warning', plain: true, onClick: () => handleRollbackVersion(item.id) }, () => '模拟回滚')
+                      h(ElButton, { size: 'small', type: 'warning', plain: true, onClick: () => handleRollbackVersion(item.id) }, () => '模拟回滚'),
+                      h(RequirementMarker, { id: 'version-history', placement: 'left' })
                     ])
                   ]),
                   h(ElDescriptions, { column: 4, size: 'small', border: true }, () => [
@@ -1212,6 +1244,13 @@ function getPublishStatusType(status: PublishStatus) {
   gap: 12px;
 }
 
+.inline-action-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  vertical-align: middle;
+}
+
 .docs-top-button {
   font-weight: 600;
 }
@@ -1438,6 +1477,7 @@ function getPublishStatusType(status: PublishStatus) {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
+  align-items: center;
 }
 
 .feature-head,
@@ -1588,6 +1628,7 @@ function getPublishStatusType(status: PublishStatus) {
   top: 16px;
   right: 22px;
   display: flex;
+  align-items: center;
   gap: 8px;
 }
 
