@@ -36,11 +36,11 @@
         </div>
         <div v-if="!detailMode" class="topbar__actions">
           <el-input v-model="queryParams.keyword" class="top-search" placeholder="请输入功能名称/功能项名称" clearable @keyup.enter="handleQuery" />
-          <el-button plain :icon="Document" @click="docsOpen = true">需求说明</el-button>
+          <el-button class="docs-top-button" type="warning" plain :icon="Document" @click="docsOpen = true">查看需求说明</el-button>
           <el-button type="primary" @click="handleQuery">查询</el-button>
         </div>
         <div v-else class="topbar__actions">
-          <el-button plain :icon="Document" @click="docsOpen = true">需求说明</el-button>
+          <el-button class="docs-top-button" type="warning" plain :icon="Document" @click="docsOpen = true">查看需求说明</el-button>
           <el-tooltip :disabled="canPublish" content="当前没有草稿变更，暂不可发布" placement="top">
             <span>
               <el-button type="primary" :icon="UploadFilled" :disabled="!canPublish" @click="handleOpenPublish">立即发布</el-button>
@@ -48,6 +48,17 @@
           </el-tooltip>
         </div>
       </el-header>
+
+      <section class="requirements-guide" aria-label="需求说明入口">
+        <div class="requirements-guide__icon">
+          <el-icon><Document /></el-icon>
+        </div>
+        <div class="requirements-guide__content">
+          <strong>研发对照指引：本原型已内置需求说明文档</strong>
+          <span>点击右侧按钮可查看「功能需求梳理」与「默认值优化需求分析」，用于对照页面设计、交互流程、默认值规则和发布闭环。</span>
+        </div>
+        <el-button type="warning" :icon="Document" @click="docsOpen = true">打开需求说明</el-button>
+      </section>
 
       <el-main v-if="!detailMode" class="category-page">
         <aside class="category-panel">
@@ -199,6 +210,12 @@
       </el-main>
     </el-container>
   </el-container>
+
+  <button class="requirements-float" type="button" aria-label="打开需求说明文档" @click="docsOpen = true">
+    <el-icon><Document /></el-icon>
+    <span>需求说明</span>
+    <small>研发对照</small>
+  </button>
 
   <CategoryDialog v-if="categoryDialogOpen" v-model="categoryDialogOpen" :category="editingCategory" @success="handleCategorySaved" />
   <FunctionDialog
@@ -1191,21 +1208,137 @@ function getPublishStatusType(status: PublishStatus) {
 
 .topbar__actions {
   display: flex;
+  align-items: center;
   gap: 12px;
+}
+
+.docs-top-button {
+  font-weight: 600;
 }
 
 .top-search {
   width: 300px;
 }
 
+.requirements-guide {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 24px 14px;
+  padding: 12px 16px;
+  border: 1px solid #f4c56a;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #fff8e8 0%, #fffef8 100%);
+  box-shadow: 0 8px 18px rgba(154, 102, 18, 0.08);
+}
+
+.requirements-guide__icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  border-radius: 8px;
+  background: #f59e0b;
+  color: #fff;
+  font-size: 20px;
+}
+
+.requirements-guide__content {
+  min-width: 0;
+  flex: 1;
+
+  strong,
+  span {
+    display: block;
+  }
+
+  strong {
+    color: #7c4a03;
+    font-size: 15px;
+  }
+
+  span {
+    margin-top: 4px;
+    color: #6b4f16;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
+
+.requirements-float {
+  position: fixed;
+  right: 24px;
+  bottom: 28px;
+  z-index: 50;
+  display: grid;
+  width: 104px;
+  min-height: 92px;
+  place-items: center;
+  padding: 12px 10px;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  background: #f59e0b;
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(146, 64, 14, 0.25);
+  cursor: pointer;
+
+  .el-icon {
+    font-size: 24px;
+  }
+
+  span {
+    margin-top: 4px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  small {
+    color: #fff7ed;
+    font-size: 12px;
+  }
+}
+
+.requirements-float:hover {
+  background: #d97706;
+}
+
 .category-page {
   display: flex;
-  min-height: calc(100vh - 88px);
+  min-height: calc(100vh - 158px);
   margin: 0 24px 18px;
   padding: 0;
   border-radius: 8px;
   background: #fff;
   overflow: hidden;
+}
+
+@media (max-width: 860px) {
+  .topbar {
+    height: auto !important;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+
+  .topbar__actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .top-search {
+    width: 100%;
+  }
+
+  .requirements-guide {
+    align-items: flex-start;
+    margin: 0 12px 12px;
+  }
+
+  .requirements-guide > .el-button {
+    flex: 0 0 auto;
+  }
 }
 
 .category-panel {
