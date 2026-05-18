@@ -1,0 +1,26 @@
+{
+  "name": "iot-thing-model-admin",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "element-plus": "^2.9.5",
+    "sass": "^1.85.0",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@vue/tsconfig": "^0.7.0",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.0",
+    "vue-tsc": "^2.2.8"
+  }
+}
