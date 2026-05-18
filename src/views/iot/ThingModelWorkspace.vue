@@ -36,9 +36,11 @@
         </div>
         <div v-if="!detailMode" class="topbar__actions">
           <el-input v-model="queryParams.keyword" class="top-search" placeholder="请输入功能名称/功能项名称" clearable @keyup.enter="handleQuery" />
+          <el-button plain :icon="Document" @click="docsOpen = true">需求说明</el-button>
           <el-button type="primary" @click="handleQuery">查询</el-button>
         </div>
         <div v-else class="topbar__actions">
+          <el-button plain :icon="Document" @click="docsOpen = true">需求说明</el-button>
           <el-tooltip :disabled="canPublish" content="当前没有草稿变更，暂不可发布" placement="top">
             <span>
               <el-button type="primary" :icon="UploadFilled" :disabled="!canPublish" @click="handleOpenPublish">立即发布</el-button>
@@ -218,6 +220,7 @@
   <JsonImportDialog v-if="selectedCategory && importOpen" v-model="importOpen" :category-id="selectedCategory.id" @success="handleModelSaved" />
   <PublishDialog v-if="selectedCategory && publishOpen" v-model="publishOpen" :category-id="selectedCategory.id" @success="handlePublished" @navigate="handlePublishNavigate" />
   <HardwareOverrideDialog v-if="hardwareDialogOpen" v-model="hardwareDialogOpen" :override="editingOverride" @success="handleHardwareSaved" />
+  <RequirementDocsDialog v-if="docsOpen" v-model="docsOpen" />
   <el-dialog v-if="exportDialogOpen" v-model="exportDialogOpen" title="JSON 导出结果" width="720px" append-to-body destroy-on-close :close-on-click-modal="false">
     <el-input v-model="exportContent" type="textarea" :rows="18" readonly />
     <template #footer>
@@ -238,6 +241,7 @@ import {
   CopyDocument,
   Cpu,
   Delete,
+  Document,
   Download,
   Edit,
   EditPen,
@@ -270,6 +274,7 @@ import FunctionDialog from '@/components/FunctionDialog.vue';
 import HardwareOverrideDialog from '@/components/HardwareOverrideDialog.vue';
 import JsonImportDialog from '@/components/JsonImportDialog.vue';
 import PublishDialog from '@/components/PublishDialog.vue';
+import RequirementDocsDialog from '@/components/RequirementDocsDialog.vue';
 import ThingModelDrawer from '@/components/ThingModelDrawer.vue';
 import type {
   AuditLog,
@@ -329,6 +334,7 @@ const modelDrawerKey = ref(0);
 const importOpen = ref(false);
 const publishOpen = ref(false);
 const hardwareDialogOpen = ref(false);
+const docsOpen = ref(false);
 const exportDialogOpen = ref(false);
 const exportContent = ref('');
 const editingCategory = ref<ProductCategory | null>(null);
@@ -638,7 +644,7 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  () => [categoryDialogOpen.value, functionDialogOpen.value, modelDrawerOpen.value, importOpen.value, publishOpen.value, hardwareDialogOpen.value, exportDialogOpen.value],
+  () => [categoryDialogOpen.value, functionDialogOpen.value, modelDrawerOpen.value, importOpen.value, publishOpen.value, hardwareDialogOpen.value, docsOpen.value, exportDialogOpen.value],
   async (states) => {
     if (states.some(Boolean)) {
       return;
@@ -667,6 +673,7 @@ function hasOpenPopup() {
     importOpen.value ||
     publishOpen.value ||
     hardwareDialogOpen.value ||
+    docsOpen.value ||
     exportDialogOpen.value
   );
 }
