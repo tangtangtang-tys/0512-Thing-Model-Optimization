@@ -1,5 +1,6 @@
 <template>
   <el-popover
+    v-if="showRequirementMarkers"
     :placement="placement"
     :width="width"
     trigger="click"
@@ -31,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, inject, type Ref } from 'vue';
 import { getRequirementMarker, type RequirementMarkerDoc } from '@/docs/requirementMarkers';
 
 const props = withDefaults(
@@ -61,6 +62,7 @@ const fallbackMarker: RequirementMarkerDoc = {
 };
 
 const marker = computed(() => getRequirementMarker(props.id) || fallbackMarker);
+const showRequirementMarkers = inject<Ref<boolean>>('showRequirementMarkers', computed(() => true));
 </script>
 
 <style scoped lang="scss">

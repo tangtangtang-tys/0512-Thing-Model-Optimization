@@ -57,8 +57,9 @@
         </div>
         <div class="requirements-guide__content">
           <strong>需求对照已内置</strong>
-          <span>点击页面中的「R」标注可查看对应需求依据，完整文档可在右侧打开。</span>
+          <span>点击页面中的「R」标注可查看对应需求依据，也可以隐藏标注只查看原型。</span>
         </div>
+        <el-switch v-model="showRequirementMarkers" size="small" active-text="显示标注" inactive-text="隐藏标注" />
         <el-button type="primary" plain :icon="Document" @click="docsOpen = true">打开文档</el-button>
       </section>
 
@@ -145,14 +146,26 @@
 
             <template v-if="activeModule === 'thing-model'">
               <div class="feature-head">
-                <strong>功能项列表（{{ functionCards.length }}）</strong>
+                <strong>功能项列表（{{ filteredFunctionCards.length }}）</strong>
                 <div class="inline-action-group">
                   <RequirementMarker id="function-manage" placement="left" />
                   <el-button type="primary" :icon="Plus" @click="handleAddFunction">新增功能</el-button>
                 </div>
               </div>
+              <div class="feature-filters" aria-label="功能项筛选">
+                <button
+                  v-for="item in featureFilters"
+                  :key="item.key"
+                  type="button"
+                  :class="{ active: featureFilter === item.key }"
+                  @click="featureFilter = item.key"
+                >
+                  <span>{{ item.label }}</span>
+                  <strong>{{ item.count }}</strong>
+                </button>
+              </div>
               <div class="feature-grid">
-                <button v-for="card in functionCards" :key="card.id" class="feature-card" type="button" @click="openFeatureDetail(card)">
+                <button v-for="card in filteredFunctionCards" :key="card.id" class="feature-card" type="button" @click="openFeatureDetail(card)">
                   <div class="feature-image" :class="{ ai: card.ai }">
                     <template v-if="card.ai">
                       <span class="ai-mark">AI</span>
@@ -172,10 +185,10 @@
                   <small>最近更新：{{ card.updatedAt }}</small>
                 </button>
               </div>
-              <el-empty v-if="functionCards.length === 0" description="暂无功能项">
+              <el-empty v-if="filteredFunctionCards.length === 0" description="当前筛选下暂无功能项">
                 <el-button type="primary" :icon="Plus" @click="handleAddFunction">新增功能</el-button>
               </el-empty>
-              <div class="page-foot">共 {{ functionCards.length }} 条　24条/页　1 页</div>
+              <div class="page-foot">共 {{ filteredFunctionCards.length }} 条　24条/页　1 页</div>
             </template>
 
             <template v-else-if="activeModule === 'hardware'">
@@ -297,7 +310,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineComponent, h, nextTick, onBeforeUnmount, onMounted, reactive, ref, toRaw, watch } from 'vue';
+import { computed, defineComponent, h, nextTick, onBeforeUnmount, onMounted, provide, reactive, ref, toRaw, watch } from 'vue';
 import {
   ArrowLeft,
   ArrowRight,
@@ -374,6 +387,7 @@ import {
 } from '@/api/iot/thingModel';
 
 type ModuleKey = 'thing-model' | 'hardware' | 'devices' | 'audit';
+type FeatureFilterKey = 'all' | 'changed' | 'missing-default' | 'ready';
 
 interface FunctionCard {
   id: string;
@@ -405,6 +419,7 @@ const importOpen = ref(false);
 const publishOpen = ref(false);
 const hardwareDialogOpen = ref(false);
 const docsOpen = ref(false);
+const showRequirementMarkers = ref(true);
 const exportDialogOpen = ref(false);
 const exportContent = ref('');
 const editingCategory = ref<ProductCategory | null>(null);
@@ -421,6 +436,8 @@ const hardwareOverrides = ref<HardwareOverride[]>([]);
 const deviceInstances = ref<DeviceInstance[]>([]);
 const auditLogs = ref<AuditLog[]>([]);
 let lastDocumentActionAt = 0;
+
+provide('showRequirementMarkers', showRequirementMarkers);
 
 const queryParams = reactive<QueryParams>({
   pageNum: 1,
@@ -490,6 +507,19 @@ const functionCards = computed<FunctionCard[]>(() => {
     ai: name.includes('AI')
   }));
 });
+const featureFilter = ref<FeatureFilterKey>('all');
+const filteredFunctionCards = computed(() => {
+  if (featureFilter.value === 'changed') return functionCards.value.filter((card) => card.changeCount > 0);
+  if (featureFilter.value === 'missing-default') return functionCards.value.filter((card) => card.modelCount > 0 && card.defaultCount < card.modelCount);
+  if (featureFilter.value === 'ready') return functionCards.value.filter((card) => card.modelCount > 0 && card.defaultCount === card.modelCount && card.changeCount === 0);
+  return functionCards.value;
+});
+const featureFilters = computed<Array<{ key: FeatureFilterKey; label: string; count: number }>>(() => [
+  { key: 'all', label: '全部', count: functionCards.value.length },
+  { key: 'changed', label: '有变更', count: functionCards.value.filter((card) => card.changeCount > 0).length },
+  { key: 'missing-default', label: '待补默认值', count: functionCards.value.filter((card) => card.modelCount > 0 && card.defaultCount < card.modelCount).length },
+  { key: 'ready', label: '可发布', count: functionCards.value.filter((card) => card.modelCount > 0 && card.defaultCount === card.modelCount && card.changeCount === 0).length }
+]);
 const nextActionKey = computed(() => {
   if (allModels.value.length === 0) return 'model';
   if (defaultEnabledCount.value === 0) return 'default';
@@ -1406,6 +1436,11 @@ function getPublishStatusType(status: PublishStatus) {
   background: #f8fbff;
 }
 
+.requirements-guide :deep(.el-switch__label) {
+  color: #64748b;
+  font-size: 12px;
+}
+
 .requirements-guide__icon {
   display: grid;
   width: 32px;
@@ -1743,6 +1778,39 @@ function getPublishStatusType(status: PublishStatus) {
   }
 }
 
+.feature-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -6px 0 14px;
+
+  button {
+    display: inline-flex;
+    height: 34px;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    border: 1px solid #dbe3ef;
+    border-radius: 999px;
+    background: #fff;
+    color: #475569;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease;
+
+    strong {
+      color: #111827;
+      font-size: 13px;
+    }
+
+    &.active,
+    &:hover {
+      border-color: #93c5fd;
+      background: #eff6ff;
+      color: #1264ff;
+    }
+  }
+}
+
 .feature-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(238px, 1fr));
@@ -1783,6 +1851,14 @@ function getPublishStatusType(status: PublishStatus) {
     color: #94a3b8;
     font-size: 12px;
   }
+}
+
+.category-item:focus-visible,
+.feature-card:focus-visible,
+.workflow-step:focus-visible,
+.feature-filters button:focus-visible {
+  outline: 3px solid rgba(18, 100, 255, 0.28);
+  outline-offset: 2px;
 }
 
 .feature-meta {
