@@ -56,10 +56,10 @@
           <el-icon><Document /></el-icon>
         </div>
         <div class="requirements-guide__content">
-          <strong>研发对照指引：本原型已内置需求说明文档</strong>
-          <span>点击右侧按钮可查看「功能需求梳理」与「默认值优化需求分析」，用于对照页面设计、交互流程、默认值规则和发布闭环。</span>
+          <strong>需求对照已内置</strong>
+          <span>点击页面中的「R」标注可查看对应需求依据，完整文档可在右侧打开。</span>
         </div>
-        <el-button type="warning" :icon="Document" @click="docsOpen = true">打开需求说明</el-button>
+        <el-button type="primary" plain :icon="Document" @click="docsOpen = true">打开文档</el-button>
       </section>
 
       <el-main v-if="!detailMode" class="category-page">
@@ -103,6 +103,14 @@
               </div>
             </div>
 
+            <div class="template-summary" aria-label="模板状态摘要">
+              <div v-for="item in templateSummaryCards" :key="item.label" class="summary-card" :class="`summary-card--${item.tone}`">
+                <span>{{ item.label }}</span>
+                <strong>{{ item.value }}</strong>
+                <em>{{ item.desc }}</em>
+              </div>
+            </div>
+
             <div class="process-strip">
               <div>
                 <strong>流程指引</strong>
@@ -118,6 +126,21 @@
                 <el-button type="primary" plain @click="handleWorkflowAction(nextActionKey)">{{ nextActionButton }}</el-button>
                 <RequirementMarker id="workflow-guide" placement="top-end" />
               </div>
+            </div>
+
+            <div class="workflow-steps" aria-label="物模型模板闭环流程">
+              <button
+                v-for="(step, index) in workflowProgress"
+                :key="step.key"
+                class="workflow-step"
+                :class="[`workflow-step--${step.status}`, { active: step.key === nextActionKey }]"
+                type="button"
+                @click="handleWorkflowAction(step.key)"
+              >
+                <span>{{ index + 1 }}</span>
+                <strong>{{ step.title }}</strong>
+                <em>{{ step.description }}</em>
+              </button>
             </div>
 
             <template v-if="activeModule === 'thing-model'">
@@ -235,12 +258,6 @@
       </el-main>
     </el-container>
   </el-container>
-
-  <button class="requirements-float" type="button" aria-label="打开需求说明文档" @click="docsOpen = true">
-    <el-icon><Document /></el-icon>
-    <span>需求说明</span>
-    <small>研发对照</small>
-  </button>
 
   <CategoryDialog v-if="categoryDialogOpen" v-model="categoryDialogOpen" :category="editingCategory" @success="handleCategorySaved" />
   <FunctionDialog
@@ -416,6 +433,12 @@ const publishStatusMap: Record<PublishStatus, string> = {
   deprecated: '已废弃',
   rolled_back: '已回滚'
 };
+const templateStatusMap: Record<TemplateStatus, string> = {
+  none: '未创建',
+  drafting: '草稿中',
+  published: '已发布',
+  changed: '有变更'
+};
 const accessModeMap = {
   r: '只读',
   rw: '读写',
@@ -482,7 +505,98 @@ const nextActionButton = computed(() => {
   };
   return map[nextActionKey.value] || '查看';
 });
-const workflowSteps = computed<WorkflowStep[]>(() => []);
+const templateSummaryCards = computed(() => {
+  const category = selectedCategory.value;
+  const defaultRatio = allModels.value.length > 0 ? Math.round((defaultEnabledCount.value / allModels.value.length) * 100) : 0;
+  return [
+    {
+      label: '当前版本',
+      value: category?.currentVersion || '-',
+      desc: category ? templateStatusMap[category.templateStatus] : '-',
+      tone: 'neutral'
+    },
+    {
+      label: '物模型',
+      value: String(allModels.value.length || category?.modelCount || 0),
+      desc: '属性 / 服务 / 事件',
+      tone: 'primary'
+    },
+    {
+      label: '默认值配置率',
+      value: `${defaultRatio}%`,
+      desc: `${defaultEnabledCount.value}/${allModels.value.length || 0} 已启用`,
+      tone: defaultRatio >= 80 ? 'success' : 'warning'
+    },
+    {
+      label: '草稿变更',
+      value: String(changedModels.value.length || category?.draftChangeCount || 0),
+      desc: changedModels.value.length > 0 ? '待发布校验' : '暂无待处理',
+      tone: changedModels.value.length > 0 ? 'warning' : 'neutral'
+    },
+    {
+      label: '覆盖冲突',
+      value: String(conflictOverrides.value.length),
+      desc: conflictOverrides.value.length > 0 ? '阻断发布' : `${hardwareOverrides.value.length} 条覆盖正常`,
+      tone: conflictOverrides.value.length > 0 ? 'danger' : 'success'
+    },
+    {
+      label: '待初始化设备',
+      value: String(uninitializedDevices.value.length),
+      desc: uninitializedDevices.value.length > 0 ? '需生成快照' : '初始化完成',
+      tone: uninitializedDevices.value.length > 0 ? 'warning' : 'success'
+    }
+  ];
+});
+const workflowProgress = computed<WorkflowStep[]>(() => [
+  {
+    key: 'model',
+    title: '维护物模型',
+    description: '类目模板资产',
+    status: allModels.value.length > 0 ? 'done' : 'doing',
+    count: allModels.value.length,
+    actionText: '新增功能'
+  },
+  {
+    key: 'default',
+    title: '配置默认值',
+    description: '初始化与兜底',
+    status: allModels.value.length === 0 ? 'todo' : defaultEnabledCount.value === allModels.value.length ? 'done' : 'doing',
+    count: defaultEnabledCount.value,
+    actionText: '查看物模型'
+  },
+  {
+    key: 'hardware',
+    title: '硬件覆盖',
+    description: '校验型号差异',
+    status: conflictOverrides.value.length > 0 ? 'risk' : hardwareOverrides.value.length > 0 ? 'done' : 'todo',
+    count: conflictOverrides.value.length || hardwareOverrides.value.length,
+    actionText: '修复覆盖'
+  },
+  {
+    key: 'changes',
+    title: '发布校验',
+    description: '变更与影响范围',
+    status: changedModels.value.length > 0 ? 'doing' : allModels.value.length > 0 ? 'done' : 'todo',
+    count: changedModels.value.length,
+    actionText: '进入详情'
+  },
+  {
+    key: 'device',
+    title: '设备初始化',
+    description: '生成默认快照',
+    status: uninitializedDevices.value.length > 0 ? 'doing' : deviceInstances.value.length > 0 ? 'done' : 'todo',
+    count: uninitializedDevices.value.length,
+    actionText: '查看设备'
+  },
+  {
+    key: 'audit',
+    title: '审计追踪',
+    description: '发布与操作留痕',
+    status: auditLogs.value.length > 0 ? 'done' : 'todo',
+    count: auditLogs.value.length,
+    actionText: '查看日志'
+  }
+]);
 
 const PanelHead = defineComponent({
   name: 'PanelHead',
@@ -1262,25 +1376,24 @@ function getPublishStatusType(status: PublishStatus) {
 .requirements-guide {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin: 0 24px 14px;
-  padding: 12px 16px;
-  border: 1px solid #f4c56a;
+  gap: 12px;
+  margin: 0 24px 12px;
+  padding: 10px 14px;
+  border: 1px solid #dbeafe;
   border-radius: 8px;
-  background: linear-gradient(90deg, #fff8e8 0%, #fffef8 100%);
-  box-shadow: 0 8px 18px rgba(154, 102, 18, 0.08);
+  background: #f8fbff;
 }
 
 .requirements-guide__icon {
   display: grid;
-  width: 40px;
-  height: 40px;
-  flex: 0 0 40px;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
   place-items: center;
-  border-radius: 8px;
-  background: #f59e0b;
-  color: #fff;
-  font-size: 20px;
+  border-radius: 6px;
+  background: #e0efff;
+  color: #1264ff;
+  font-size: 17px;
 }
 
 .requirements-guide__content {
@@ -1293,53 +1406,16 @@ function getPublishStatusType(status: PublishStatus) {
   }
 
   strong {
-    color: #7c4a03;
-    font-size: 15px;
+    color: #1f2937;
+    font-size: 14px;
   }
 
   span {
     margin-top: 4px;
-    color: #6b4f16;
+    color: #64748b;
     font-size: 13px;
     line-height: 1.5;
   }
-}
-
-.requirements-float {
-  position: fixed;
-  right: 24px;
-  bottom: 28px;
-  z-index: 50;
-  display: grid;
-  width: 104px;
-  min-height: 92px;
-  place-items: center;
-  padding: 12px 10px;
-  border: 1px solid #f59e0b;
-  border-radius: 8px;
-  background: #f59e0b;
-  color: #fff;
-  box-shadow: 0 12px 28px rgba(146, 64, 14, 0.25);
-  cursor: pointer;
-
-  .el-icon {
-    font-size: 24px;
-  }
-
-  span {
-    margin-top: 4px;
-    font-size: 14px;
-    font-weight: 700;
-  }
-
-  small {
-    color: #fff7ed;
-    font-size: 12px;
-  }
-}
-
-.requirements-float:hover {
-  background: #d97706;
 }
 
 .category-page {
@@ -1451,6 +1527,66 @@ function getPublishStatusType(status: PublishStatus) {
   }
 }
 
+.template-summary {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(120px, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.summary-card {
+  min-height: 86px;
+  padding: 12px 14px;
+  border: 1px solid #e5edf7;
+  border-radius: 8px;
+  background: #fff;
+
+  span,
+  strong,
+  em {
+    display: block;
+  }
+
+  span {
+    color: #64748b;
+    font-size: 12px;
+  }
+
+  strong {
+    margin-top: 8px;
+    color: #111827;
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  em {
+    margin-top: 8px;
+    color: #64748b;
+    font-size: 12px;
+    font-style: normal;
+  }
+}
+
+.summary-card--primary {
+  border-color: #bfdbfe;
+  background: #f8fbff;
+}
+
+.summary-card--success {
+  border-color: #bbf7d0;
+  background: #f7fef9;
+}
+
+.summary-card--warning {
+  border-color: #fde68a;
+  background: #fffdf4;
+}
+
+.summary-card--danger {
+  border-color: #fecaca;
+  background: #fff7f7;
+}
+
 .process-strip {
   display: flex;
   align-items: center;
@@ -1478,6 +1614,90 @@ function getPublishStatusType(status: PublishStatus) {
   justify-content: flex-end;
   gap: 8px;
   align-items: center;
+}
+
+.workflow-steps {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(110px, 1fr));
+  gap: 8px;
+  margin: -6px 0 18px;
+}
+
+.workflow-step {
+  position: relative;
+  min-height: 84px;
+  padding: 12px 12px 12px 42px;
+  border: 1px solid #e5edf7;
+  border-radius: 8px;
+  background: #fff;
+  color: #1f2937;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+
+  span {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    display: grid;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    border-radius: 50%;
+    background: #e5eaf3;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  strong,
+  em {
+    display: block;
+  }
+
+  strong {
+    font-size: 14px;
+  }
+
+  em {
+    margin-top: 6px;
+    color: #64748b;
+    font-size: 12px;
+    font-style: normal;
+    line-height: 1.4;
+  }
+
+  &:hover {
+    border-color: #93c5fd;
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.08);
+    transform: translateY(-1px);
+  }
+}
+
+.workflow-step--done span {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.workflow-step--doing span,
+.workflow-step.active span {
+  background: #dbeafe;
+  color: #1264ff;
+}
+
+.workflow-step--risk {
+  border-color: #fecaca;
+  background: #fff7f7;
+
+  span {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+}
+
+.workflow-step.active {
+  border-color: #93c5fd;
+  background: #f8fbff;
 }
 
 .feature-head,
@@ -1704,6 +1924,11 @@ function getPublishStatusType(status: PublishStatus) {
   .feature-grid {
     grid-template-columns: repeat(4, minmax(190px, 1fr));
   }
+
+  .template-summary,
+  .workflow-steps {
+    grid-template-columns: repeat(3, minmax(160px, 1fr));
+  }
 }
 
 @media (max-width: 1100px) {
@@ -1722,6 +1947,11 @@ function getPublishStatusType(status: PublishStatus) {
 
   .feature-grid {
     grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+
+  .template-summary,
+  .workflow-steps {
+    grid-template-columns: repeat(2, minmax(160px, 1fr));
   }
 }
 </style>

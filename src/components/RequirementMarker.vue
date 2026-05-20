@@ -9,6 +9,7 @@
     <template #reference>
       <button class="requirement-marker" :class="[`requirement-marker--${tone}`, { 'is-inline': inline }]" type="button" :aria-label="`查看需求标注 ${marker.code}`">
         <span>{{ marker.code }}</span>
+        <em>需求</em>
       </button>
     </template>
 
@@ -64,26 +65,37 @@ const marker = computed(() => getRequirementMarker(props.id) || fallbackMarker);
 
 <style scoped lang="scss">
 .requirement-marker {
-  display: inline-grid;
-  width: 24px;
+  display: inline-flex;
+  min-width: 58px;
   height: 24px;
-  place-items: center;
-  padding: 0;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  background: #ef4444;
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(185, 28, 28, 0.28);
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 8px;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  box-shadow: none;
   cursor: pointer;
   vertical-align: middle;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
 
   span {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 800;
     line-height: 1;
   }
 
+  em {
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 600;
+  }
+
   &:hover {
+    border-color: #60a5fa;
+    background: #dbeafe;
     transform: translateY(-1px);
   }
 
@@ -93,13 +105,21 @@ const marker = computed(() => getRequirementMarker(props.id) || fallbackMarker);
 }
 
 .requirement-marker--blue {
-  background: #2563eb;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.24);
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
 }
 
 .requirement-marker--amber {
-  background: #d97706;
-  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.24);
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.requirement-marker--red {
+  border-color: #fecaca;
+  background: #fff1f2;
+  color: #be123c;
 }
 
 .marker-card {
