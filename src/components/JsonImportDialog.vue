@@ -22,7 +22,7 @@
       <div class="dialog-footer">
         <el-button @click="handleCancel">取消</el-button>
         <RequirementMarker id="json-import-export" placement="top-end" />
-        <el-button type="primary" :loading="submitLoading" @click="handleConfirm">完成</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleConfirm">导入并校验</el-button>
       </div>
     </template>
   </el-dialog>

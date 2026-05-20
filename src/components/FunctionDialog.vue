@@ -39,7 +39,7 @@
       <div class="dialog-footer">
         <el-button @click="handleCancel">取消</el-button>
         <RequirementMarker id="function-manage" placement="top-end" />
-        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">完成</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">保存功能项</el-button>
       </div>
     </template>
   </el-dialog>

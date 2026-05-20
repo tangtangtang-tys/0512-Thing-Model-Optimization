@@ -164,6 +164,12 @@
                   </div>
                   <strong>{{ card.title }}<el-icon><ArrowRight /></el-icon></strong>
                   <p>{{ card.subtitle }}</p>
+                  <div class="feature-meta">
+                    <span>模型 {{ card.modelCount }}</span>
+                    <span>默认值 {{ card.defaultCount }}</span>
+                    <span :class="{ warning: card.changeCount > 0 }">变更 {{ card.changeCount }}</span>
+                  </div>
+                  <small>最近更新：{{ card.updatedAt }}</small>
                 </button>
               </div>
               <el-empty v-if="functionCards.length === 0" description="暂无功能项">
@@ -375,6 +381,10 @@ interface FunctionCard {
   subtitle: string;
   statusText: string;
   ai: boolean;
+  modelCount: number;
+  defaultCount: number;
+  changeCount: number;
+  updatedAt: string;
 }
 
 const loading = ref(false);
@@ -472,6 +482,7 @@ const functionCards = computed<FunctionCard[]>(() => {
     .map((name) => renamedFunctionMap.value[name] || name)
     .filter((name) => !hiddenFunctionNames.value.includes(name));
   return baseNames.map((name, index) => ({
+    ...getFunctionCardStats(name),
     id: `${name}_${index}`,
     title: name,
     subtitle: index === 11 ? 'AI检测算法汇总' : index === 12 ? '啼哭安抚2' : name,
@@ -597,6 +608,16 @@ const workflowProgress = computed<WorkflowStep[]>(() => [
     actionText: '查看日志'
   }
 ]);
+
+function getFunctionCardStats(name: string) {
+  const relatedModels = allModels.value.filter((model) => model.functionItems.includes(name));
+  return {
+    modelCount: relatedModels.length,
+    defaultCount: relatedModels.filter((model) => model.defaultConfig.enabled).length,
+    changeCount: relatedModels.filter((model) => model.changeStatus !== 'none').length,
+    updatedAt: relatedModels[0]?.updatedAt || selectedCategory.value?.updatedAt || '-'
+  };
+}
 
 const PanelHead = defineComponent({
   name: 'PanelHead',
@@ -1190,6 +1211,7 @@ function handleFunctionSaved(name: string) {
   }
   hiddenFunctionNames.value = hiddenFunctionNames.value.filter((item) => item !== name);
   selectedFeature.value = {
+    ...getFunctionCardStats(name),
     id: `${name}_${Date.now()}`,
     title: name,
     subtitle: editingFunctionRemark.value || name,
@@ -1753,6 +1775,33 @@ function getPublishStatusType(status: PublishStatus) {
   p {
     margin: 8px 0 0;
     color: #6b7280;
+  }
+
+  small {
+    display: block;
+    margin-top: 10px;
+    color: #94a3b8;
+    font-size: 12px;
+  }
+}
+
+.feature-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+
+  span {
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 12px;
+  }
+
+  .warning {
+    background: #fff7ed;
+    color: #c2410c;
   }
 }
 

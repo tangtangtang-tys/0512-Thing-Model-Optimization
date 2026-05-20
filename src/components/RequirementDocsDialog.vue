@@ -20,6 +20,18 @@
           <strong>{{ doc.title }}</strong>
           <span>{{ doc.sourceName }}</span>
         </button>
+        <div class="docs-toc" v-if="headingBlocks.length">
+          <strong>章节目录</strong>
+          <button
+            v-for="heading in headingBlocks"
+            :key="`${heading.index}-${heading.text}`"
+            type="button"
+            :class="`level-${heading.level}`"
+            @click="scrollToBlock(heading.index)"
+          >
+            {{ heading.text }}
+          </button>
+        </div>
       </aside>
 
       <section class="docs-content">
@@ -28,22 +40,30 @@
             <h2>{{ activeDoc.title }}</h2>
             <span>{{ activeDoc.sourceName }}</span>
           </div>
-          <el-button :icon="CopyDocument" @click="handleCopy">复制全文</el-button>
+          <div class="docs-head__actions">
+            <el-input v-model="keyword" class="docs-search" clearable placeholder="搜索需求关键词" />
+            <el-button :icon="CopyDocument" @click="handleCopy">复制全文</el-button>
+          </div>
         </div>
-        <article class="markdown-preview">
+        <article ref="previewRef" class="markdown-preview">
           <template v-for="(block, index) in docBlocks" :key="`${block.type}-${index}-${block.text}`">
-            <component :is="block.type" v-if="isHeading(block.type)" class="doc-heading">
-              {{ block.text }}
+            <component :is="block.type" v-if="isHeading(block.type)" class="doc-heading" :data-doc-index="index">
+              <span v-for="(part, partIndex) in getHighlightedParts(block.text)" :key="`${index}-h-${partIndex}`" :class="{ highlight: part.match }">{{ part.text }}</span>
             </component>
-            <p v-else-if="block.type === 'p'">{{ block.text }}</p>
+            <p v-else-if="block.type === 'p'" :data-doc-index="index">
+              <span v-for="(part, partIndex) in getHighlightedParts(block.text)" :key="`${index}-p-${partIndex}`" :class="{ highlight: part.match }">{{ part.text }}</span>
+            </p>
             <div
               v-else
               class="doc-list-line"
               :class="{ ordered: block.type === 'ol', unordered: block.type === 'ul' }"
               :style="{ paddingLeft: `${block.depth * 22}px` }"
+              :data-doc-index="index"
             >
               <span class="doc-list-marker">{{ block.marker }}</span>
-              <span>{{ block.text }}</span>
+              <span>
+                <span v-for="(part, partIndex) in getHighlightedParts(block.text)" :key="`${index}-l-${partIndex}`" :class="{ highlight: part.match }">{{ part.text }}</span>
+              </span>
             </div>
           </template>
         </article>
@@ -67,9 +87,17 @@ interface DocBlock {
 
 const visible = defineModel<boolean>({ required: true });
 const activeDocId = ref(requirementDocs[0]?.id || '');
+const keyword = ref('');
+const previewRef = ref<HTMLElement>();
 
 const activeDoc = computed(() => requirementDocs.find((doc) => doc.id === activeDocId.value) || requirementDocs[0]);
 const docBlocks = computed(() => parseMarkdown(activeDoc.value.content));
+const normalizedKeyword = computed(() => keyword.value.trim().toLowerCase());
+const headingBlocks = computed(() =>
+  docBlocks.value
+    .map((block, index) => ({ ...block, index, level: Number(block.type.slice(1)) }))
+    .filter((block) => isHeading(block.type))
+);
 
 async function handleCopy() {
   await navigator.clipboard.writeText(activeDoc.value.content);
@@ -125,6 +153,29 @@ function parseMarkdown(markdown: string): DocBlock[] {
 
 function isHeading(type: DocBlock['type']) {
   return ['h1', 'h2', 'h3', 'h4'].includes(type);
+}
+
+function scrollToBlock(index: number) {
+  previewRef.value?.querySelector<HTMLElement>(`[data-doc-index="${index}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function getHighlightedParts(text: string) {
+  const query = normalizedKeyword.value;
+  if (!query) return [{ text, match: false }];
+  const lowerText = text.toLowerCase();
+  const parts: Array<{ text: string; match: boolean }> = [];
+  let start = 0;
+  let found = lowerText.indexOf(query);
+
+  while (found !== -1) {
+    if (found > start) parts.push({ text: text.slice(start, found), match: false });
+    parts.push({ text: text.slice(found, found + query.length), match: true });
+    start = found + query.length;
+    found = lowerText.indexOf(query, start);
+  }
+
+  if (start < text.length) parts.push({ text: text.slice(start), match: false });
+  return parts;
 }
 
 function getIndentDepth(spaces: string) {
@@ -187,6 +238,47 @@ function cleanInline(value: string) {
   }
 }
 
+.docs-toc {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #e5eaf3;
+
+  > strong {
+    display: block;
+    margin-bottom: 10px;
+    color: #475569;
+    font-size: 12px;
+  }
+
+  button {
+    display: block;
+    width: 100%;
+    padding: 7px 8px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: #334155;
+    text-align: left;
+    cursor: pointer;
+    line-height: 1.4;
+
+    &:hover {
+      background: #eef6ff;
+      color: #1264ff;
+    }
+  }
+
+  .level-3 {
+    padding-left: 18px;
+    font-size: 12px;
+  }
+
+  .level-4 {
+    padding-left: 28px;
+    font-size: 12px;
+  }
+}
+
 .docs-content {
   display: flex;
   min-height: 0;
@@ -216,6 +308,16 @@ function cleanInline(value: string) {
     color: #64748b;
     font-size: 13px;
   }
+}
+
+.docs-head__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.docs-search {
+  width: 220px;
 }
 
 .markdown-preview {
@@ -249,6 +351,12 @@ function cleanInline(value: string) {
 
   p {
     margin: 8px 0;
+  }
+
+  .highlight {
+    border-radius: 3px;
+    background: #fef3c7;
+    color: #92400e;
   }
 }
 
@@ -285,13 +393,27 @@ function cleanInline(value: string) {
     min-width: 190px;
   }
 
+  .docs-toc {
+    display: none;
+  }
+
   .docs-content {
     height: calc(78vh - 92px);
   }
 
   .docs-content__head {
     align-items: flex-start;
+    flex-direction: column;
     padding: 16px 18px 12px;
+  }
+
+  .docs-head__actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .docs-search {
+    width: 100%;
   }
 
   .markdown-preview {
